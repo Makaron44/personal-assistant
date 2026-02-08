@@ -152,11 +152,18 @@ function renderDeadlines(deadlines) {
 
     list.innerHTML = deadlines.map(deadline => {
         const status = getDeadlineStatus(deadline.date);
+        const daysInfo = getDaysInfo(deadline.date);
+
         return `
             <div class="card" data-id="${deadline.id}">
                 <div class="card-header">
                     <div class="card-title">📄 ${escapeHtml(deadline.name)}</div>
-                    <span class="card-status ${status.class}">${status.label}</span>
+                    <div class="days-counter ${daysInfo.colorClass}">
+                        <span class="days-number">${daysInfo.text}</span>
+                        <button class="btn-calendar" onclick="addToCalendar('${escapeHtml(deadline.name)}', '${deadline.date}')" title="Dodaj do kalendarza">
+                            📅
+                        </button>
+                    </div>
                 </div>
                 <div class="card-info">
                     📅 Ważny do: ${formatDate(deadline.date)}
@@ -173,6 +180,31 @@ function renderDeadlines(deadlines) {
             </div>
         `;
     }).join('');
+}
+
+// Get days info with color class
+function getDaysInfo(dateStr) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const deadline = new Date(dateStr);
+    deadline.setHours(0, 0, 0, 0);
+
+    const diffDays = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+
+    if (diffDays < 0) {
+        return { text: 'Wygasł!', colorClass: 'days-expired' };
+    } else if (diffDays === 0) {
+        return { text: 'Dziś!', colorClass: 'days-danger' };
+    } else if (diffDays === 1) {
+        return { text: '1 dzień', colorClass: 'days-danger' };
+    } else if (diffDays < 5) {
+        return { text: `${diffDays} dni`, colorClass: 'days-danger' };
+    } else if (diffDays < 10) {
+        return { text: `${diffDays} dni`, colorClass: 'days-warning' };
+    } else {
+        return { text: `${diffDays} dni`, colorClass: 'days-ok' };
+    }
 }
 
 function getDeadlineStatus(dateStr) {
@@ -193,6 +225,61 @@ function getDeadlineStatus(dateStr) {
     } else {
         return { class: 'status-ok', label: 'OK' };
     }
+}
+
+// Generate ICS file and trigger download for Apple Calendar
+function addToCalendar(title, dateStr) {
+    const eventDate = new Date(dateStr);
+
+    // Format date for ICS (YYYYMMDD)
+    const formatICSDate = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}${month}${day}`;
+    };
+
+    // Alarm 1 day before
+    const alarmDate = new Date(eventDate);
+    alarmDate.setDate(alarmDate.getDate() - 1);
+
+    const icsContent = `BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Personal Assistant//PL
+BEGIN:VEVENT
+DTSTART;VALUE=DATE:${formatICSDate(eventDate)}
+DTEND;VALUE=DATE:${formatICSDate(eventDate)}
+SUMMARY:⚠️ Termin: ${title}
+DESCRIPTION:Przypomnienie o terminie ważności dokumentu: ${title}
+BEGIN:VALARM
+TRIGGER:-P1D
+ACTION:DISPLAY
+DESCRIPTION:Jutro wygasa: ${title}
+END:VALARM
+BEGIN:VALARM
+TRIGGER:-P7D
+ACTION:DISPLAY
+DESCRIPTION:Za tydzień wygasa: ${title}
+END:VALARM
+END:VEVENT
+END:VCALENDAR`;
+
+    // Create blob and download link
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+
+    // Create temporary link and trigger download
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `termin-${title.replace(/[^a-zA-Z0-9]/g, '-')}.ics`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Clean up
+    URL.revokeObjectURL(url);
+
+    showToast('Otwórz pobrany plik aby dodać do kalendarza');
 }
 
 async function loadDeadlineForEdit(id) {

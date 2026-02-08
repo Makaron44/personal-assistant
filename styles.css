@@ -340,6 +340,75 @@ body::before {
     color: var(--status-red);
 }
 
+/* Days Counter with Colors */
+.days-counter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-glass);
+    min-width: 70px;
+}
+
+.days-number {
+    font-size: 0.9rem;
+    font-weight: 700;
+}
+
+.days-ok .days-number {
+    color: var(--status-green);
+}
+
+.days-warning .days-number {
+    color: var(--status-yellow);
+}
+
+.days-danger .days-number {
+    color: var(--status-red);
+}
+
+.days-expired .days-number {
+    color: var(--status-red);
+    animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.btn-calendar {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+    background: rgba(108, 92, 231, 0.2);
+    border: 1px solid var(--accent-primary);
+    font-size: 0.9rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s, background 0.2s;
+}
+
+.btn-calendar:hover {
+    background: rgba(108, 92, 231, 0.4);
+    transform: scale(1.1);
+}
+
+.btn-calendar:active {
+    transform: scale(0.95);
+}
+
 .card-info {
     color: var(--text-secondary);
     font-size: 0.9rem;
