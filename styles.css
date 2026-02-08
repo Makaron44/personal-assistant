@@ -508,14 +508,15 @@ body::before {
     transform: translateX(-50%);
     width: 100%;
     max-width: 500px;
-    height: var(--nav-height);
-    padding-bottom: env(safe-area-inset-bottom);
+    height: calc(var(--nav-height) + 20px);
+    padding-bottom: calc(env(safe-area-inset-bottom) + 15px);
+    padding-top: 8px;
     background: var(--bg-glass);
     backdrop-filter: blur(20px);
     border-top: 1px solid var(--border-color);
     display: flex;
     justify-content: space-around;
-    align-items: center;
+    align-items: flex-start;
     z-index: 100;
 }
 
