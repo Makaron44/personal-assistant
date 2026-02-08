@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pl">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="description"
+        content="Personal Assistant - Twój osobisty asystent do zarządzania terminami i przedmiotami">
+    <title>Personal Assistant</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-512.svg">
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="app">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="header-title">Personal Assistant</h1>
+            <p class="header-subtitle" id="current-date"></p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Deadlines View -->
+            <section id="deadlines-view" class="view active">
+                <div class="section-header">
+                    <h2>📅 Terminy Dokumentów</h2>
+                    <button class="btn-add" onclick="openModal('deadline')">
+                        <span>+</span>
+                    </button>
+                </div>
+                <div id="deadlines-list" class="items-list">
+                    <!-- Filled by JS -->
+                </div>
+                <div id="deadlines-empty" class="empty-state">
+                    <div class="empty-icon">📋</div>
+                    <p>Brak terminów do śledzenia</p>
+                    <button class="btn-primary" onclick="openModal('deadline')">Dodaj pierwszy termin</button>
+                </div>
+            </section>
+
+            <!-- Items View -->
+            <section id="items-view" class="view">
+                <div class="section-header">
+                    <h2>🏠 Gdzie Co Jest</h2>
+                    <button class="btn-add" onclick="openModal('item')">
+                        <span>+</span>
+                    </button>
+                </div>
+                <div class="search-box">
+                    <input type="text" id="search-input" placeholder="🔍 Szukaj przedmiotu..." oninput="searchItems()">
+                </div>
+                <div id="items-list" class="items-list">
+                    <!-- Filled by JS -->
+                </div>
+                <div id="items-empty" class="empty-state">
+                    <div class="empty-icon">📦</div>
+                    <p>Brak zapisanych przedmiotów</p>
+                    <button class="btn-primary" onclick="openModal('item')">Dodaj pierwszy przedmiot</button>
+                </div>
+            </section>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav class="bottom-nav">
+            <button class="nav-btn active" data-view="deadlines" onclick="switchView('deadlines')">
+                <span class="nav-icon">📅</span>
+                <span class="nav-label">Terminy</span>
+            </button>
+            <button class="nav-btn" data-view="items" onclick="switchView('items')">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-label">Przedmioty</span>
+            </button>
+        </nav>
+    </div>
+
+    <!-- Modal for adding/editing -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modal-title">Dodaj</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+
+            <!-- Deadline Form -->
+            <form id="deadline-form" class="modal-form" onsubmit="saveDeadline(event)">
+                <div class="form-group">
+                    <label for="deadline-name">Nazwa dokumentu</label>
+                    <input type="text" id="deadline-name" placeholder="np. Paszport" required>
+                </div>
+                <div class="form-group">
+                    <label for="deadline-date">Data ważności</label>
+                    <input type="date" id="deadline-date" required>
+                </div>
+                <div class="form-group">
+                    <label for="deadline-notes">Notatki (opcjonalnie)</label>
+                    <textarea id="deadline-notes" placeholder="Dodatkowe informacje..."></textarea>
+                </div>
+                <input type="hidden" id="deadline-id">
+                <button type="submit" class="btn-primary btn-full">Zapisz</button>
+            </form>
+
+            <!-- Item Form -->
+            <form id="item-form" class="modal-form" onsubmit="saveItem(event)">
+                <div class="form-group">
+                    <label for="item-name">Nazwa przedmiotu</label>
+                    <input type="text" id="item-name" placeholder="np. Śrubokręt" required>
+                </div>
+                <div class="form-group">
+                    <label for="item-location">Lokalizacja</label>
+                    <input type="text" id="item-location" placeholder="np. Szuflada w kuchni" required>
+                </div>
+                <div class="form-group">
+                    <label for="item-category">Kategoria</label>
+                    <select id="item-category">
+                        <option value="other">📦 Inne</option>
+                        <option value="documents">📄 Dokumenty</option>
+                        <option value="tools">🔧 Narzędzia</option>
+                        <option value="electronics">💻 Elektronika</option>
+                        <option value="clothes">👕 Ubrania</option>
+                        <option value="kitchen">🍳 Kuchnia</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="item-notes">Notatki (opcjonalnie)</label>
+                    <textarea id="item-notes" placeholder="Dodatkowe informacje..."></textarea>
+                </div>
+                <input type="hidden" id="item-id">
+                <button type="submit" class="btn-primary btn-full">Zapisz</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast"></div>
+
+    <script src="db.js"></script>
+    <script src="app.js"></script>
+</body>
+
+</html>
