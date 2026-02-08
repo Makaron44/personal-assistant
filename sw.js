@@ -1,9 +1,10 @@
 // ============================================
 // Personal Assistant - Service Worker
-// Enables offline functionality
+// Version 2 - with update support
 // ============================================
 
-const CACHE_NAME = 'personal-assistant-v1';
+const APP_VERSION = '2.0.0';
+const CACHE_NAME = `personal-assistant-v${APP_VERSION}`;
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -15,7 +16,7 @@ const ASSETS_TO_CACHE = [
 
 // Install event - cache assets
 self.addEventListener('install', event => {
-    console.log('Service Worker: Installing...');
+    console.log(`Service Worker v${APP_VERSION}: Installing...`);
 
     event.waitUntil(
         caches.open(CACHE_NAME)
@@ -25,6 +26,7 @@ self.addEventListener('install', event => {
             })
             .then(() => {
                 console.log('Service Worker: All files cached');
+                // Skip waiting to activate immediately when user requests update
                 return self.skipWaiting();
             })
     );
@@ -32,7 +34,7 @@ self.addEventListener('install', event => {
 
 // Activate event - clean old caches
 self.addEventListener('activate', event => {
-    console.log('Service Worker: Activating...');
+    console.log(`Service Worker v${APP_VERSION}: Activating...`);
 
     event.waitUntil(
         caches.keys()
@@ -48,53 +50,75 @@ self.addEventListener('activate', event => {
             })
             .then(() => {
                 console.log('Service Worker: Now active');
+                // Take control of all clients immediately
                 return self.clients.claim();
             })
     );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Fetch event - network first for HTML, cache first for assets
 self.addEventListener('fetch', event => {
-    // Skip non-GET requests and external resources
+    // Skip non-GET requests
     if (event.request.method !== 'GET') {
         return;
     }
 
+    // Skip external resources (like weather API)
+    if (!event.request.url.startsWith(self.location.origin)) {
+        return;
+    }
+
     event.respondWith(
-        caches.match(event.request)
-            .then(cachedResponse => {
-                if (cachedResponse) {
-                    // Return cached version
-                    return cachedResponse;
-                }
-
-                // Fetch from network
-                return fetch(event.request)
-                    .then(response => {
-                        // Don't cache non-successful responses
-                        if (!response || response.status !== 200 || response.type !== 'basic') {
-                            return response;
-                        }
-
-                        // Clone the response
-                        const responseToCache = response.clone();
-
-                        // Cache the new resource
-                        caches.open(CACHE_NAME)
-                            .then(cache => {
-                                cache.put(event.request, responseToCache);
-                            });
-
-                        return response;
-                    })
-                    .catch(() => {
-                        // Return a fallback for navigation requests
-                        if (event.request.mode === 'navigate') {
-                            return caches.match('./index.html');
-                        }
-                    });
-            })
+        // For HTML pages, try network first
+        event.request.mode === 'navigate'
+            ? networkFirst(event.request)
+            : cacheFirst(event.request)
     );
+});
+
+// Network first strategy (for HTML)
+async function networkFirst(request) {
+    try {
+        const networkResponse = await fetch(request);
+        if (networkResponse.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(request, networkResponse.clone());
+        }
+        return networkResponse;
+    } catch (error) {
+        const cachedResponse = await caches.match(request);
+        return cachedResponse || caches.match('./index.html');
+    }
+}
+
+// Cache first strategy (for assets)
+async function cacheFirst(request) {
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+        return cachedResponse;
+    }
+
+    try {
+        const networkResponse = await fetch(request);
+        if (networkResponse.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(request, networkResponse.clone());
+        }
+        return networkResponse;
+    } catch (error) {
+        return new Response('Offline', { status: 503 });
+    }
+}
+
+// Handle messages from the app
+self.addEventListener('message', event => {
+    if (event.data === 'skipWaiting') {
+        self.skipWaiting();
+    }
+
+    if (event.data === 'getVersion') {
+        event.ports[0].postMessage({ version: APP_VERSION });
+    }
 });
 
 // Background sync for future enhancements

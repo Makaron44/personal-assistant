@@ -17,9 +17,21 @@
 
 <body>
     <div class="app">
+        <!-- Update Banner (hidden by default) -->
+        <div id="update-banner" class="update-banner">
+            <span>🔄 Dostępna nowa wersja!</span>
+            <button onclick="applyUpdate()">Aktualizuj teraz</button>
+        </div>
+
         <!-- Header -->
         <header class="header">
-            <h1 class="header-title">Personal Assistant</h1>
+            <div class="header-top">
+                <h1 class="header-title">Personal Assistant</h1>
+                <button id="check-update-btn" class="btn-update" onclick="checkForUpdates()"
+                    title="Sprawdź aktualizacje">
+                    🔄
+                </button>
+            </div>
             <p class="header-subtitle" id="current-date"></p>
         </header>
 

@@ -82,6 +82,14 @@ body::before {
     border-bottom: 1px solid var(--border-color);
 }
 
+.header-top {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    position: relative;
+}
+
 .header-title {
     font-size: 1.5rem;
     font-weight: 700;
@@ -91,10 +99,66 @@ body::before {
     background-clip: text;
 }
 
+.btn-update {
+    position: absolute;
+    right: 0;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--bg-glass);
+    border: 1px solid var(--border-color);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s, background 0.2s;
+}
+
+.btn-update:hover {
+    background: rgba(108, 92, 231, 0.2);
+}
+
+.btn-update.checking {
+    animation: spin 1s linear infinite;
+}
+
 .header-subtitle {
     font-size: 0.85rem;
     color: var(--text-secondary);
     margin-top: 4px;
+}
+
+/* Update Banner */
+.update-banner {
+    display: none;
+    padding: 12px 20px;
+    background: linear-gradient(135deg, #00d26a 0%, #00b359 100%);
+    color: white;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-weight: 500;
+}
+
+.update-banner.visible {
+    display: flex;
+}
+
+.update-banner button {
+    padding: 6px 14px;
+    background: white;
+    color: #00b359;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.update-banner button:hover {
+    transform: scale(1.05);
 }
 
 /* ============================================

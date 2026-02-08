@@ -581,18 +581,97 @@ function closeImageModal() {
 }
 
 // ============================================
-// Service Worker Registration
+// Service Worker Registration & Updates
 // ============================================
 
+let swRegistration = null;
+let waitingWorker = null;
+
 function registerServiceWorker() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js')
-            .then(registration => {
-                console.log('Service Worker registered:', registration);
-            })
-            .catch(error => {
-                console.error('Service Worker registration failed:', error);
+    if (!('serviceWorker' in navigator)) {
+        console.log('Service Worker not supported');
+        return;
+    }
+
+    navigator.serviceWorker.register('sw.js')
+        .then(registration => {
+            swRegistration = registration;
+            console.log('Service Worker registered:', registration);
+
+            // Check for updates on page load
+            registration.update();
+
+            // Listen for new service worker waiting
+            registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+
+                newWorker.addEventListener('statechange', () => {
+                    if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                        // New version available
+                        waitingWorker = newWorker;
+                        showUpdateBanner();
+                    }
+                });
             });
+        })
+        .catch(error => {
+            console.error('Service Worker registration failed:', error);
+        });
+
+    // Reload page when new service worker takes over
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+        window.location.reload();
+    });
+}
+
+// Check for updates manually
+async function checkForUpdates() {
+    const btn = document.getElementById('check-update-btn');
+
+    if (!swRegistration) {
+        showToast('Service Worker nie jest aktywny');
+        return;
+    }
+
+    // Show checking animation
+    btn.classList.add('checking');
+
+    try {
+        // Force check for update
+        await swRegistration.update();
+
+        // Wait a moment for update check
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        if (waitingWorker) {
+            showUpdateBanner();
+            showToast('Znaleziono aktualizację!');
+        } else {
+            showToast('Masz najnowszą wersję ✓');
+        }
+    } catch (error) {
+        console.error('Update check failed:', error);
+        showToast('Błąd sprawdzania aktualizacji');
+    } finally {
+        btn.classList.remove('checking');
+    }
+}
+
+// Show update banner
+function showUpdateBanner() {
+    const banner = document.getElementById('update-banner');
+    banner.classList.add('visible');
+}
+
+// Apply update - skip waiting and reload
+function applyUpdate() {
+    if (waitingWorker) {
+        waitingWorker.postMessage('skipWaiting');
+    } else if (swRegistration && swRegistration.waiting) {
+        swRegistration.waiting.postMessage('skipWaiting');
+    } else {
+        // Fallback: force reload without cache
+        window.location.reload(true);
     }
 }
 
