@@ -6,6 +6,7 @@
 let currentView = 'deadlines';
 let currentModalType = null;
 let editingId = null;
+let currentImageData = null; // For storing compressed image
 
 // Category icons mapping
 const categoryIcons = {
@@ -111,6 +112,7 @@ function closeModal() {
     document.getElementById('modal').classList.remove('active');
     currentModalType = null;
     editingId = null;
+    resetImageUpload();
 }
 
 // Close modal when clicking outside
@@ -283,8 +285,13 @@ function renderItems(items) {
 
     list.innerHTML = items.map(item => {
         const icon = categoryIcons[item.category] || '📦';
+        const imageHtml = item.image ? `
+            <div class="card-image" onclick="openImageModal('${item.image.replace(/'/g, "\\'")}')"> 
+                <img src="${item.image}" alt="${escapeHtml(item.name)}" loading="lazy">
+            </div>` : '';
         return `
             <div class="card" data-id="${item.id}">
+                ${imageHtml}
                 <div class="card-category">${icon} ${getCategoryName(item.category)}</div>
                 <div class="card-header">
                     <div class="card-title">${escapeHtml(item.name)}</div>
@@ -327,6 +334,12 @@ async function loadItemForEdit(id) {
             document.getElementById('item-category').value = item.category;
             document.getElementById('item-notes').value = item.notes || '';
             document.getElementById('item-id').value = item.id;
+
+            // Load image if exists
+            if (item.image) {
+                currentImageData = item.image;
+                displayImagePreview(item.image);
+            }
         }
     } catch (error) {
         console.error('Failed to load item:', error);
@@ -347,7 +360,7 @@ async function saveItem(event) {
         return;
     }
 
-    const item = { name, location, category, notes };
+    const item = { name, location, category, notes, image: currentImageData };
 
     try {
         if (id) {
@@ -422,6 +435,149 @@ function showToast(message) {
     setTimeout(() => {
         toast.classList.remove('visible');
     }, 3000);
+}
+
+// ============================================
+// Image Handling (Compression & Preview)
+// ============================================
+
+const MAX_IMAGE_WIDTH = 1200;
+const IMAGE_QUALITY = 0.8;
+
+// Compress image using Canvas API
+async function compressImage(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = (e) => {
+            const img = new Image();
+
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+
+                // Scale down if needed
+                if (width > MAX_IMAGE_WIDTH) {
+                    height = (height * MAX_IMAGE_WIDTH) / width;
+                    width = MAX_IMAGE_WIDTH;
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, width, height);
+
+                // Convert to compressed JPEG
+                const compressedDataUrl = canvas.toDataURL('image/jpeg', IMAGE_QUALITY);
+                resolve(compressedDataUrl);
+            };
+
+            img.onerror = () => reject(new Error('Failed to load image'));
+            img.src = e.target.result;
+        };
+
+        reader.onerror = () => reject(new Error('Failed to read file'));
+        reader.readAsDataURL(file);
+    });
+}
+
+// Handle image file selection
+async function previewImage(event) {
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+    // Check file type
+    if (!file.type.startsWith('image/')) {
+        showToast('Wybierz plik graficzny');
+        return;
+    }
+
+    // Show loading
+    const preview = document.getElementById('image-preview');
+    preview.innerHTML = `
+        <div class="weather-loading">
+            <div class="spinner"></div>
+            <p>Kompresja...</p>
+        </div>
+    `;
+
+    try {
+        const originalSize = (file.size / 1024).toFixed(0);
+        const compressedDataUrl = await compressImage(file);
+
+        // Calculate compressed size (approximate from base64)
+        const compressedSize = Math.round((compressedDataUrl.length * 3) / 4 / 1024);
+
+        currentImageData = compressedDataUrl;
+        displayImagePreview(compressedDataUrl);
+
+        showToast(`Zdjęcie skompresowane: ${originalSize}KB → ${compressedSize}KB`);
+    } catch (error) {
+        console.error('Image compression failed:', error);
+        showToast('Błąd kompresji zdjęcia');
+        resetImageUpload();
+    }
+}
+
+// Display image in preview area
+function displayImagePreview(dataUrl) {
+    const preview = document.getElementById('image-preview');
+    const removeBtn = document.getElementById('remove-image-btn');
+
+    preview.innerHTML = `<img src="${dataUrl}" alt="Podgląd">`;
+    preview.onclick = () => openImageModal(dataUrl);
+    removeBtn.style.display = 'block';
+}
+
+// Remove image from form
+function removeImage() {
+    currentImageData = null;
+    resetImageUpload();
+    showToast('Zdjęcie usunięte');
+}
+
+// Reset image upload to initial state
+function resetImageUpload() {
+    currentImageData = null;
+
+    const preview = document.getElementById('image-preview');
+    const removeBtn = document.getElementById('remove-image-btn');
+    const fileInput = document.getElementById('item-image');
+
+    preview.innerHTML = `
+        <div class="image-preview-placeholder">
+            <span class="image-icon">📷</span>
+            <span>Kliknij aby dodać zdjęcie</span>
+        </div>
+    `;
+    preview.onclick = () => document.getElementById('item-image').click();
+
+    if (removeBtn) removeBtn.style.display = 'none';
+    if (fileInput) fileInput.value = '';
+}
+
+// Open full-screen image modal
+function openImageModal(imageSrc) {
+    const modal = document.getElementById('image-modal');
+    const img = document.getElementById('image-modal-img');
+
+    img.src = imageSrc;
+    modal.classList.add('active');
+
+    // Prevent scrolling
+    document.body.style.overflow = 'hidden';
+}
+
+// Close full-screen image modal
+function closeImageModal() {
+    const modal = document.getElementById('image-modal');
+    modal.classList.remove('active');
+
+    // Restore scrolling
+    document.body.style.overflow = '';
 }
 
 // ============================================
