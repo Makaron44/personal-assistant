@@ -66,6 +66,11 @@ function switchView(view) {
         v.classList.remove('active');
     });
     document.getElementById(`${view}-view`).classList.add('active');
+
+    // Load weather when switching to weather view
+    if (view === 'weather') {
+        loadWeather();
+    }
 }
 
 // ============================================
@@ -439,10 +444,15 @@ function registerServiceWorker() {
 // Weather API (Open-Meteo - Free, No API Key)
 // ============================================
 
-// Rogoźno coordinates from the MSN link
-const WEATHER_LAT = 52.7460;
-const WEATHER_LON = 16.9963;
-const WEATHER_LOCATION = 'Rogoźno';
+// Default location (Rogoźno) - used as fallback
+const DEFAULT_LAT = 52.7460;
+const DEFAULT_LON = 16.9963;
+const DEFAULT_LOCATION = 'Rogoźno';
+
+// Current weather location
+let weatherLat = DEFAULT_LAT;
+let weatherLon = DEFAULT_LON;
+let weatherLocation = DEFAULT_LOCATION;
 
 // Weather code to icon and description mapping
 const weatherCodes = {
@@ -478,19 +488,71 @@ function getWeatherInfo(code) {
     return weatherCodes[code] || { icon: '🌡️', desc: 'Nieznana pogoda' };
 }
 
+// Get user's location
+async function getUserLocation() {
+    return new Promise((resolve) => {
+        if (!navigator.geolocation) {
+            console.log('Geolocation not supported, using default location');
+            resolve({ lat: DEFAULT_LAT, lon: DEFAULT_LON, name: DEFAULT_LOCATION });
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(
+            async (position) => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+
+                // Try to get location name using reverse geocoding
+                try {
+                    const response = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?lat=${lat}&lon=${lon}&format=json&accept-language=pl`
+                    );
+                    const data = await response.json();
+                    const name = data.address?.city || data.address?.town || data.address?.village || 'Twoja lokalizacja';
+                    resolve({ lat, lon, name });
+                } catch (error) {
+                    resolve({ lat, lon, name: 'Twoja lokalizacja' });
+                }
+            },
+            (error) => {
+                console.log('Geolocation error:', error.message);
+                resolve({ lat: DEFAULT_LAT, lon: DEFAULT_LON, name: DEFAULT_LOCATION });
+            },
+            { timeout: 10000, enableHighAccuracy: false }
+        );
+    });
+}
+
 async function loadWeather() {
     const container = document.getElementById('weather-content');
+    const header = document.querySelector('#weather-view .section-header h2');
 
     // Show loading state
     container.innerHTML = `
         <div class="weather-loading">
             <div class="spinner"></div>
-            <p>Ładowanie pogody...</p>
+            <p>Pobieranie lokalizacji...</p>
         </div>
     `;
 
     try {
-        const url = `https://api.open-meteo.com/v1/forecast?latitude=${WEATHER_LAT}&longitude=${WEATHER_LON}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FWarsaw&forecast_days=7`;
+        // Get user location
+        const location = await getUserLocation();
+        weatherLat = location.lat;
+        weatherLon = location.lon;
+        weatherLocation = location.name;
+
+        // Update header with location name
+        header.textContent = `🌤️ Pogoda - ${weatherLocation}`;
+
+        container.innerHTML = `
+            <div class="weather-loading">
+                <div class="spinner"></div>
+                <p>Ładowanie pogody...</p>
+            </div>
+        `;
+
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${weatherLat}&longitude=${weatherLon}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FWarsaw&forecast_days=7`;
 
         const response = await fetch(url);
 
@@ -608,11 +670,3 @@ function renderWeather(data) {
     `;
 }
 
-// Load weather when switching to weather view
-const originalSwitchView = switchView;
-switchView = function (view) {
-    originalSwitchView(view);
-    if (view === 'weather') {
-        loadWeather();
-    }
-};
