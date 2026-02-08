@@ -26,6 +26,11 @@
         <!-- Header -->
         <header class="header">
             <div class="header-top">
+                <button id="hamburger-btn" class="btn-hamburger" onclick="toggleMenu()" aria-label="Menu">
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                    <span class="hamburger-line"></span>
+                </button>
                 <h1 class="header-title">Personal Assistant</h1>
                 <button id="check-update-btn" class="btn-update" onclick="checkForUpdates()"
                     title="Sprawdź aktualizacje">
@@ -34,6 +39,31 @@
             </div>
             <p class="header-subtitle" id="current-date"></p>
         </header>
+
+        <!-- Side Menu Overlay -->
+        <div id="menu-overlay" class="menu-overlay" onclick="toggleMenu()"></div>
+
+        <!-- Side Menu -->
+        <nav id="side-menu" class="side-menu">
+            <div class="menu-header">
+                <h2>Menu</h2>
+                <button class="menu-close" onclick="toggleMenu()">✕</button>
+            </div>
+            <div class="menu-items">
+                <button class="menu-item active" data-view="deadlines" onclick="switchViewFromMenu('deadlines')">
+                    <span class="menu-icon">📅</span>
+                    <span class="menu-label">Terminy</span>
+                </button>
+                <button class="menu-item" data-view="items" onclick="switchViewFromMenu('items')">
+                    <span class="menu-icon">🏠</span>
+                    <span class="menu-label">Przedmioty</span>
+                </button>
+                <button class="menu-item" data-view="weather" onclick="switchViewFromMenu('weather')">
+                    <span class="menu-icon">🌤️</span>
+                    <span class="menu-label">Pogoda</span>
+                </button>
+            </div>
+        </nav>
 
         <!-- Main Content -->
         <main class="main-content">
@@ -93,21 +123,6 @@
             </section>
         </main>
 
-        <!-- Bottom Navigation -->
-        <nav class="bottom-nav">
-            <button class="nav-btn active" data-view="deadlines" onclick="switchView('deadlines')">
-                <span class="nav-icon">📅</span>
-                <span class="nav-label">Terminy</span>
-            </button>
-            <button class="nav-btn" data-view="items" onclick="switchView('items')">
-                <span class="nav-icon">🏠</span>
-                <span class="nav-label">Przedmioty</span>
-            </button>
-            <button class="nav-btn" data-view="weather" onclick="switchView('weather')">
-                <span class="nav-icon">🌤️</span>
-                <span class="nav-label">Pogoda</span>
-            </button>
-        </nav>
     </div>
 
     <!-- Modal for adding/editing -->

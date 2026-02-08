@@ -3,7 +3,7 @@
 // Version 2 - with update support
 // ============================================
 
-const APP_VERSION = '2.2.0';
+const APP_VERSION = '3.0.0';
 const CACHE_NAME = `personal-assistant-v${APP_VERSION}`;
 const ASSETS_TO_CACHE = [
     './',

@@ -57,8 +57,8 @@ function updateCurrentDate() {
 function switchView(view) {
     currentView = view;
 
-    // Update navigation
-    document.querySelectorAll('.nav-btn').forEach(btn => {
+    // Update side menu items
+    document.querySelectorAll('.menu-item').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.view === view);
     });
 
@@ -71,6 +71,39 @@ function switchView(view) {
     // Load weather when switching to weather view
     if (view === 'weather') {
         loadWeather();
+    }
+}
+
+// Switch view from side menu (also closes menu)
+function switchViewFromMenu(view) {
+    switchView(view);
+    closeMenu();
+}
+
+// ============================================
+// Hamburger Menu
+// ============================================
+
+let menuOpen = false;
+
+function toggleMenu() {
+    menuOpen = !menuOpen;
+
+    const hamburger = document.getElementById('hamburger-btn');
+    const overlay = document.getElementById('menu-overlay');
+    const sideMenu = document.getElementById('side-menu');
+
+    hamburger.classList.toggle('active', menuOpen);
+    overlay.classList.toggle('active', menuOpen);
+    sideMenu.classList.toggle('active', menuOpen);
+
+    // Prevent body scroll when menu is open
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+}
+
+function closeMenu() {
+    if (menuOpen) {
+        toggleMenu();
     }
 }
 
