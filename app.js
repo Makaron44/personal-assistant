@@ -434,3 +434,185 @@ function registerServiceWorker() {
             });
     }
 }
+
+// ============================================
+// Weather API (Open-Meteo - Free, No API Key)
+// ============================================
+
+// Rogoźno coordinates from the MSN link
+const WEATHER_LAT = 52.7460;
+const WEATHER_LON = 16.9963;
+const WEATHER_LOCATION = 'Rogoźno';
+
+// Weather code to icon and description mapping
+const weatherCodes = {
+    0: { icon: '☀️', desc: 'Bezchmurnie' },
+    1: { icon: '🌤️', desc: 'Przeważnie bezchmurnie' },
+    2: { icon: '⛅', desc: 'Częściowe zachmurzenie' },
+    3: { icon: '☁️', desc: 'Pochmurno' },
+    45: { icon: '🌫️', desc: 'Mgła' },
+    48: { icon: '🌫️', desc: 'Szadź' },
+    51: { icon: '🌧️', desc: 'Lekka mżawka' },
+    53: { icon: '🌧️', desc: 'Mżawka' },
+    55: { icon: '🌧️', desc: 'Gęsta mżawka' },
+    61: { icon: '🌧️', desc: 'Lekki deszcz' },
+    63: { icon: '🌧️', desc: 'Deszcz' },
+    65: { icon: '🌧️', desc: 'Silny deszcz' },
+    66: { icon: '🌨️', desc: 'Marznący deszcz' },
+    67: { icon: '🌨️', desc: 'Silny marznący deszcz' },
+    71: { icon: '❄️', desc: 'Lekki śnieg' },
+    73: { icon: '❄️', desc: 'Śnieg' },
+    75: { icon: '❄️', desc: 'Silny śnieg' },
+    77: { icon: '🌨️', desc: 'Ziarna śniegu' },
+    80: { icon: '🌦️', desc: 'Lekkie opady' },
+    81: { icon: '🌦️', desc: 'Opady deszczu' },
+    82: { icon: '⛈️', desc: 'Silne opady' },
+    85: { icon: '🌨️', desc: 'Lekkie opady śniegu' },
+    86: { icon: '🌨️', desc: 'Silne opady śniegu' },
+    95: { icon: '⛈️', desc: 'Burza' },
+    96: { icon: '⛈️', desc: 'Burza z gradem' },
+    99: { icon: '⛈️', desc: 'Silna burza z gradem' }
+};
+
+function getWeatherInfo(code) {
+    return weatherCodes[code] || { icon: '🌡️', desc: 'Nieznana pogoda' };
+}
+
+async function loadWeather() {
+    const container = document.getElementById('weather-content');
+
+    // Show loading state
+    container.innerHTML = `
+        <div class="weather-loading">
+            <div class="spinner"></div>
+            <p>Ładowanie pogody...</p>
+        </div>
+    `;
+
+    try {
+        const url = `https://api.open-meteo.com/v1/forecast?latitude=${WEATHER_LAT}&longitude=${WEATHER_LON}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m&hourly=temperature_2m,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FWarsaw&forecast_days=7`;
+
+        const response = await fetch(url);
+
+        if (!response.ok) {
+            throw new Error('Nie udało się pobrać pogody');
+        }
+
+        const data = await response.json();
+        renderWeather(data);
+        showToast('Pogoda zaktualizowana');
+
+    } catch (error) {
+        console.error('Weather fetch error:', error);
+        container.innerHTML = `
+            <div class="empty-state visible">
+                <div class="empty-icon">⚠️</div>
+                <p>Nie udało się pobrać pogody</p>
+                <button class="btn-primary" onclick="loadWeather()">Spróbuj ponownie</button>
+            </div>
+        `;
+    }
+}
+
+function renderWeather(data) {
+    const container = document.getElementById('weather-content');
+    const current = data.current;
+    const hourly = data.hourly;
+    const daily = data.daily;
+
+    const currentWeather = getWeatherInfo(current.weather_code);
+
+    // Get next 24 hours
+    const now = new Date();
+    const currentHour = now.getHours();
+
+    // Build hourly forecast HTML
+    let hourlyHtml = '';
+    for (let i = 0; i < 24; i++) {
+        const hourIndex = currentHour + i;
+        if (hourIndex < hourly.time.length) {
+            const time = new Date(hourly.time[hourIndex]);
+            const temp = Math.round(hourly.temperature_2m[hourIndex]);
+            const weather = getWeatherInfo(hourly.weather_code[hourIndex]);
+            const timeStr = i === 0 ? 'Teraz' : time.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+
+            hourlyHtml += `
+                <div class="weather-hour">
+                    <div class="weather-hour-time">${timeStr}</div>
+                    <div class="weather-hour-icon">${weather.icon}</div>
+                    <div class="weather-hour-temp">${temp}°</div>
+                </div>
+            `;
+        }
+    }
+
+    // Build daily forecast HTML
+    const dayNames = ['Niedziela', 'Poniedziałek', 'Wtorek', 'Środa', 'Czwartek', 'Piątek', 'Sobota'];
+    let dailyHtml = '';
+    for (let i = 0; i < daily.time.length; i++) {
+        const date = new Date(daily.time[i]);
+        const dayName = i === 0 ? 'Dziś' : (i === 1 ? 'Jutro' : dayNames[date.getDay()]);
+        const weather = getWeatherInfo(daily.weather_code[i]);
+        const high = Math.round(daily.temperature_2m_max[i]);
+        const low = Math.round(daily.temperature_2m_min[i]);
+
+        dailyHtml += `
+            <div class="weather-day">
+                <div class="weather-day-name">${dayName}</div>
+                <div class="weather-day-icon">${weather.icon}</div>
+                <div class="weather-day-temps">
+                    <span class="weather-day-high">${high}°</span>
+                    <span class="weather-day-low">${low}°</span>
+                </div>
+            </div>
+        `;
+    }
+
+    container.innerHTML = `
+        <!-- Current Weather -->
+        <div class="weather-current">
+            <div class="weather-current-main">
+                <div class="weather-icon">${currentWeather.icon}</div>
+                <div class="weather-temp">${Math.round(current.temperature_2m)}°C</div>
+            </div>
+            <div class="weather-desc">${currentWeather.desc}</div>
+            <div class="weather-details">
+                <div class="weather-detail">
+                    <div class="weather-detail-label">Wilgotność</div>
+                    <div class="weather-detail-value">${current.relative_humidity_2m}%</div>
+                </div>
+                <div class="weather-detail">
+                    <div class="weather-detail-label">Wiatr</div>
+                    <div class="weather-detail-value">${Math.round(current.wind_speed_10m)} km/h</div>
+                </div>
+                <div class="weather-detail">
+                    <div class="weather-detail-label">Odczuwalna</div>
+                    <div class="weather-detail-value">${Math.round(current.temperature_2m)}°C</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Hourly Forecast -->
+        <div class="weather-hourly">
+            <h3>⏰ Prognoza godzinowa</h3>
+            <div class="weather-hourly-scroll">
+                ${hourlyHtml}
+            </div>
+        </div>
+
+        <!-- Daily Forecast -->
+        <div class="weather-daily">
+            <h3>📅 Prognoza 7-dniowa</h3>
+            ${dailyHtml}
+        </div>
+    `;
+}
+
+// Load weather when switching to weather view
+const originalSwitchView = switchView;
+switchView = function (view) {
+    originalSwitchView(view);
+    if (view === 'weather') {
+        loadWeather();
+    }
+};

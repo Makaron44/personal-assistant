@@ -586,6 +586,204 @@ body::before {
 }
 
 /* ============================================
+   Weather Styles
+   ============================================ */
+.weather-container {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.weather-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    color: var(--text-secondary);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid var(--border-color);
+    border-top-color: var(--accent-primary);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 16px;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Current Weather Card */
+.weather-current {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 24px;
+    border: 1px solid var(--border-color);
+    backdrop-filter: blur(10px);
+    text-align: center;
+}
+
+.weather-current-main {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.weather-icon {
+    font-size: 4rem;
+}
+
+.weather-temp {
+    font-size: 3.5rem;
+    font-weight: 700;
+    background: var(--accent-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.weather-desc {
+    font-size: 1.1rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+    text-transform: capitalize;
+}
+
+.weather-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.weather-detail {
+    text-align: center;
+}
+
+.weather-detail-label {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.weather-detail-value {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Hourly Forecast */
+.weather-hourly {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.weather-hourly h3 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.weather-hourly-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+}
+
+.weather-hourly-scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.weather-hour {
+    flex: 0 0 auto;
+    text-align: center;
+    padding: 12px 16px;
+    background: var(--bg-glass);
+    border-radius: var(--radius-sm);
+    min-width: 70px;
+}
+
+.weather-hour-time {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.weather-hour-icon {
+    font-size: 1.5rem;
+    margin-bottom: 8px;
+}
+
+.weather-hour-temp {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+/* Daily Forecast */
+.weather-daily {
+    background: var(--bg-card);
+    border-radius: var(--radius);
+    padding: 16px;
+    border: 1px solid var(--border-color);
+}
+
+.weather-daily h3 {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+}
+
+.weather-day {
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.weather-day:last-child {
+    border-bottom: none;
+}
+
+.weather-day-name {
+    flex: 1;
+    font-weight: 500;
+}
+
+.weather-day-icon {
+    font-size: 1.5rem;
+    margin: 0 16px;
+}
+
+.weather-day-temps {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.weather-day-high {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.weather-day-low {
+    color: var(--text-muted);
+}
+
+/* ============================================
    Toast Notification
    ============================================ */
 .toast {

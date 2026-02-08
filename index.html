@@ -63,6 +63,22 @@
                     <button class="btn-primary" onclick="openModal('item')">Dodaj pierwszy przedmiot</button>
                 </div>
             </section>
+
+            <!-- Weather View -->
+            <section id="weather-view" class="view">
+                <div class="section-header">
+                    <h2>🌤️ Pogoda - Rogoźno</h2>
+                    <button class="btn-add" onclick="loadWeather()">
+                        <span>↻</span>
+                    </button>
+                </div>
+                <div id="weather-content" class="weather-container">
+                    <div class="weather-loading">
+                        <div class="spinner"></div>
+                        <p>Ładowanie pogody...</p>
+                    </div>
+                </div>
+            </section>
         </main>
 
         <!-- Bottom Navigation -->
@@ -74,6 +90,10 @@
             <button class="nav-btn" data-view="items" onclick="switchView('items')">
                 <span class="nav-icon">🏠</span>
                 <span class="nav-label">Przedmioty</span>
+            </button>
+            <button class="nav-btn" data-view="weather" onclick="switchView('weather')">
+                <span class="nav-icon">🌤️</span>
+                <span class="nav-label">Pogoda</span>
             </button>
         </nav>
     </div>
